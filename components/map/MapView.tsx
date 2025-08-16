@@ -1,6 +1,6 @@
 "use client";
 
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import { useState, useEffect } from "react";
 import { useGeolocation } from "@/src/hooks/useGeolocation";
 import { usePlaces } from "@/src/hooks/usePlaces";
