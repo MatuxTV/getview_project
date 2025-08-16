@@ -3,6 +3,7 @@
 import { Marker, Popup } from "react-leaflet";
 import { Button } from "../ui/button";
 import { NewMarker } from "@/src/types/places";
+import { useCategories } from "@/src/hooks/useCategories";
 import L from "leaflet";
 
 interface NewMarkerFormProps {
@@ -22,6 +23,8 @@ export function NewMarkerForm({
   onCancel, 
   isDisabled 
 }: NewMarkerFormProps) {
+  const { categories, loading } = useCategories();
+
   return (
     <Marker
       position={[newMarker.lat, newMarker.lng] as [number, number]}
@@ -45,6 +48,25 @@ export function NewMarkerForm({
               className="w-full px-2 py-1 border border-gray-300 rounded text-sm resize-none"
               rows={2}
             />
+            
+            {/* Výber kategórie */}
+            <select
+              value={newMarker.categoryId || ""}
+              onChange={(e) => onUpdate({ 
+                ...newMarker, 
+                categoryId: e.target.value ? Number(e.target.value) : undefined 
+              })}
+              className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+              disabled={loading}
+            >
+              <option value="">Bez kategórie</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+            
             <div className="flex gap-2">
               <Button 
                 size="sm" 

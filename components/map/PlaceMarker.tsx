@@ -4,6 +4,7 @@ import { Marker, Popup } from "react-leaflet";
 import { Button } from "../ui/button";
 import { Place } from "@/src/types/places";
 import L from "leaflet";
+import { Calendar } from "lucide-react";
 
 interface PlaceMarkerProps {
   place: Place;
@@ -53,27 +54,28 @@ export function PlaceMarker({ place, icon }: PlaceMarkerProps) {
               {place.description}
             </p>
           )}
+
+          {/* Kategória */}
+          {place.category && (
+            <div className="flex items-center gap-2 mb-2">
+              <span 
+                className="w-3 h-3 rounded-full" 
+                style={{ backgroundColor: place.category.color || '#666' }}
+              ></span>
+              <span className="text-xs font-medium text-gray-700">
+                {place.category.name}
+              </span>
+            </div>
+          )}
           
           {/* Timestamp informácie */}
           <div className="text-xs text-gray-500 mb-3 space-y-1">
             <div className="flex items-center gap-1">
-              <span>📅</span>
+              <span><Calendar /></span>
               <span>Pridané: {getRelativeTime(place.createdAt)}</span>
             </div>
           </div>
           
-          <div className="space-y-2">
-            <Button 
-              size="sm" 
-              className="w-full"
-              onClick={(e) => {
-                e.stopPropagation();
-                console.log(`Kliknuté na miesto: ${place.title}`);
-              }}
-            >
-              Viac informácií
-            </Button>
-          </div>
         </div>
       </Popup>
     </Marker>
