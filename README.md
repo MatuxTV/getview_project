@@ -1,36 +1,122 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+#  Getview Project
 
-## Getting Started
+**Webová aplikácia na objavovanie výhľadov** — mapa plná krásnych miest (výhlady, rozhľadne, prírodné body), s možnosťou pridať nové piny, kategorizovať a filtrovať.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 🆕 Funkcie (MVP)
+- 🗺 Interaktívna mapa zobrazujúca piny z DB
+- 📍 Zobrazenie aktuálnej polohy používateľa
+- 🆕 Pridávanie výhľadov cez API (GET a POST)
+-  Kategorie s farbami (napr. hory = zelená)
+-  Responzívny dizajn s TailwindCSS + čistý vizuál
+
+---
+
+##  Tech Stack
+- **Next.js (App Router)** – React, SSR, file-based routing
+- **Drizzle ORM** + `pg` – pripojenie k Websupport Postgres bez SSL problémov
+- **TypeScript**
+- **Leaflet** (react-leaflet) – mapa OSM
+- **Tailwind CSS** – utility-first styling
+- **Projektová štruktúra:**
+  ```
+  ├── src/
+  │   ├── app/
+  │   ├── components/
+  │   ├── hooks/
+  │   ├── services/
+  │   ├── types/
+  │   └── db/
+  ├── drizzle.config.ts
+  ├── next.config.ts
+  ├── package.json
+  └── README.md
+  ```
+
+---
+
+## 🚀 Rýchly štart
+
+1. Klon repo:
+   ```bash
+   git clone https://github.com/MatuxTV/getview_project.git
+   cd getview_project
+   ```
+
+2. Vytvor `.env`:
+   ```env
+   DATABASE_URL="postgresql://USER:PASSWORD@YOUR_DB_HOST:5432/getviewproject?sslmode=require"
+   ```
+
+3. Nainštaluj závislosti:
+   ```bash
+   npm install
+   ```
+
+4. Spusti vývojový server:
+   ```bash
+   npm run dev
+   ```
+   → Otvor [http://localhost:3000](http://localhost:3000)
+
+---
+
+##  API Endpoints
+- **GET `/api/places`**  
+  Vráti JSON pole výhľadov z DB:
+  ```json
+  [
+    {
+      "id": 1,
+      "title": "Výhľad Devín",
+      "description": "Hrad a rieka Morava",
+      "latitude": 48.173,
+      "longitude": 16.978
+    },
+    ...
+  ]
+  ```
+
+- **POST `/api/places`**  
+  Pridá nový výhľad (request JSON telo):
+  ```json
+  { "title":"Výhľad Vysoké Tatry", "latitude":49.2, "longitude":20.1 }
+  ```
+  → Odpoveď: nový záznam so stavom 201.
+
+---
+
+##  Štruktúra priečinkov
+```
+src/
+├── app/
+│   ├── map/            ← stránka s mapou
+│   └── api/places/
+│       └── route.ts     ← GET / POST handleri
+├── components/          ← UI komponenty (napr. MapView, LocateButton)
+├── hooks/               ← custom React hooky (napr. useGeolocation)
+├── services/            ← business logic (DB volania cez Drizzle)
+├── types/               ← TypeScript typy (Place, Category)
+└── db/
+    ├── schema.ts        ← Drizzle schémy tabuliek
+    └── client.ts        ← Drizzle + pg inicializácia
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+##  Pripravujeme neskôr (roadmap)
+-  Clusterovanie pinov (pre lepší výkon pri stovkách miest)
+-  Filtre podľa kategórií / vzdialenosti
+-  AR navigácia (Expo + dev client)
+-  Offline režim
+-  Autentifikácia, hodnotenia, fotky výhľadov
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+##  Pridaj sa!
+Ak máš radu, návrh alebo chceš prispieť do open-source - buduť vítaný. Ved moju emailovou z GitHub (MatuxTV) alebo cez Issues.
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Ďakujem za záujem o Getview!**
