@@ -6,6 +6,6 @@ export const places = pgTable("places", {
   description: text("description"),
   latitude: doublePrecision("latitude").notNull(),
   longitude: doublePrecision("longitude").notNull(),
-  createdAt: timestamp("createdAt").defaultNow(),
-  updatedAt: timestamp("updatedAt").defaultNow(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  category: text("category"), 
 });

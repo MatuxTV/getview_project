@@ -54,13 +54,20 @@ export function useGeolocation() {
     }
   }, [getCachedPosition]);
 
-  const request = useCallback(() => {
+  const request = useCallback((options?: { flyToPosition?: boolean }) => {
     // Najprv skús načítať z cache
     const cached = getCachedPosition();
     if (cached) {
       setPosition(cached);
       setStatus("granted");
       setError(null);
+      
+      // Trigger custom event pre flyTo ak je požadované
+      if (options?.flyToPosition) {
+        window.dispatchEvent(new CustomEvent('geolocation-fly-to', { 
+          detail: { lat: cached.lat, lng: cached.lng } 
+        }));
+      }
       return;
     }
 
@@ -83,6 +90,13 @@ export function useGeolocation() {
         setPosition(newPosition);
         setError(null);
         setCachedPosition(newPosition);
+        
+        // Trigger custom event pre flyTo ak je požadované
+        if (options?.flyToPosition) {
+          window.dispatchEvent(new CustomEvent('geolocation-fly-to', { 
+            detail: { lat: newPosition.lat, lng: newPosition.lng } 
+          }));
+        }
       },
       (err) => {
         setStatus(err.code === err.PERMISSION_DENIED ? "denied" : "error");

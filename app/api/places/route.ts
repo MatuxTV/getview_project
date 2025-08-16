@@ -10,18 +10,22 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const { title, description, latitude, longitude } = body ?? {};
+  const { title, description, latitude, longitude, category } = body ?? {};
 
   if (!title || typeof latitude !== "number" || typeof longitude !== "number") {
     return NextResponse.json({ error: "Invalid data" }, { status: 400 });
   }
 
-  const inserted = await db.insert(places).values({
+  // Vytvor objekt len s potrebnými polia
+  const dataToInsert = {
     title,
     description,
     latitude,
     longitude,
-  }).returning();
+    ...(category && { category }), // Pridaj category len ak existuje
+  };
+
+  const inserted = await db.insert(places).values(dataToInsert).returning();
 
   return NextResponse.json(inserted[0]);
 }

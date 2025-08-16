@@ -1,0 +1,145 @@
+"use client";
+
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { useState, useEffect } from "react";
+import { useGeolocation } from "@/src/hooks/useGeolocation";
+import { usePlaces } from "@/src/hooks/usePlaces";
+import { useMapIcons } from "@/src/hooks/useMapIcons";
+import { NewMarker } from "@/src/types/places";
+import { MapClickHandler } from "./MapClickHandler";
+import { MapControls } from "./MapControls";
+import { PlaceMarker } from "./PlaceMarker";
+import { NewMarkerForm } from "./NewMarkerForm";
+import LocateButton from "../buttons/locateButton";
+import "leaflet/dist/leaflet.css";
+
+export default function MapView() {
+  const [isAddingMode, setIsAddingMode] = useState(false);
+  const [newMarker, setNewMarker] = useState<NewMarker | null>(null);
+  const [userPosition, setUserPosition] = useState<{lat: number, lng: number} | null>(null);
+
+  const { position } = useGeolocation();
+  const { places, addPlace } = usePlaces();
+  const { userLocationIcon, defaultIcon, newMarkerIcon } = useMapIcons();
+
+  // Debug logging pre pozíciu
+  console.log("MapView position:", position);
+
+  // Sync geolocation position with local state
+  useEffect(() => {
+    if (position) {
+      setUserPosition({ lat: position.lat, lng: position.lng });
+    }
+  }, [position]);
+
+  // Poslúchaj na geolocation updates a aktualizuj lokálny state
+  useEffect(() => {
+    const handleLocationUpdate = (event: CustomEvent) => {
+      console.log("Location update event received", event.detail);
+      setUserPosition({ lat: event.detail.lat, lng: event.detail.lng });
+    };
+
+    window.addEventListener('geolocation-fly-to', handleLocationUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('geolocation-fly-to', handleLocationUpdate as EventListener);
+    };
+  }, []);
+
+  const handleMapClick = (lat: number, lng: number) => {
+    setNewMarker({ lat, lng, title: "", description: "" });
+  };
+
+  const handleSaveMarker = async () => {
+    if (!newMarker || !newMarker.title.trim()) return;
+
+    try {
+      await addPlace({
+        title: newMarker.title,
+        description: newMarker.description || null,
+        latitude: newMarker.lat,
+        longitude: newMarker.lng,
+      });
+
+      setNewMarker(null);
+      setIsAddingMode(false);
+    } catch (error) {
+      console.error("Chyba pri ukladaní:", error);
+    }
+  };
+
+  const handleCancelMarker = () => {
+    setNewMarker(null);
+    setIsAddingMode(false);
+  };
+
+  const handleToggleAddMode = () => {
+    setIsAddingMode(!isAddingMode);
+    if (newMarker) setNewMarker(null);
+  };
+
+  return (
+    <div className="h-screen w-full relative">
+      <MapContainer
+        center={
+          places.length > 0
+            ? ([places[0].latitude, places[0].longitude] as [number, number])
+            : ([48.15, 17.1] as [number, number])
+        }
+        zoom={11}
+        style={{
+          height: "100%",
+          width: "100%",
+          cursor: isAddingMode ? "crosshair" : "grab",
+        }}
+      >
+        <TileLayer
+          attribution="&copy; OpenStreetMap contributors"
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+
+        <MapClickHandler
+          isAddingMode={isAddingMode}
+          onMapClick={handleMapClick}
+        />
+
+        {/* User location marker */}
+        {userPosition && (
+          <>
+            {console.log("Rendering user marker at:", [userPosition.lat, userPosition.lng])}
+            <Marker
+              icon={userLocationIcon}
+              position={[userPosition.lat, userPosition.lng] as [number, number]}
+            ></Marker>
+          </>
+        )}
+
+        {/* Existing places */}
+        {places.map((place) => (
+          <PlaceMarker key={place.id} place={place} icon={defaultIcon} />
+        ))}
+
+        {/* New marker form */}
+        {newMarker && (
+          <NewMarkerForm
+            newMarker={newMarker}
+            icon={newMarkerIcon}
+            onUpdate={setNewMarker}
+            onSave={handleSaveMarker}
+            onCancel={handleCancelMarker}
+            isDisabled={!newMarker.title.trim()}
+          />
+        )}
+        
+        {/* Control buttons - mobile responsive */}
+        <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2 sm:flex-row sm:gap-3">
+          <LocateButton />
+          <MapControls
+            isAddingMode={isAddingMode}
+            onToggleAddMode={handleToggleAddMode}
+          />
+        </div>
+      </MapContainer>
+    </div>
+  );
+}
