@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Place } from "@/src/types/places";
+import { Place, AddPlaceRequest } from "@/src/types/places";
 
 export function usePlaces() {
   const [places, setPlaces] = useState<Place[]>([]);
@@ -23,7 +23,7 @@ export function usePlaces() {
     }
   };
 
-  const addPlace = async (place: Omit<Place, 'id' | 'createdAt'>) => {
+  const addPlace = async (place: AddPlaceRequest) => {
     try {
       const response = await fetch("/api/places", {
         method: "POST",

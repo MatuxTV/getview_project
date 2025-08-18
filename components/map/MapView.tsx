@@ -20,10 +20,8 @@ export default function MapView() {
 
   const { position } = useGeolocation();
   const { places, addPlace } = usePlaces();
-  const { userLocationIcon, defaultIcon, newMarkerIcon } = useMapIcons();
-
-  // Debug logging pre pozíciu
-  console.log("MapView position:", position);
+  const { userLocationIcon, newMarkerIcon, getCategoryIcon } = useMapIcons();
+  
 
   // Sync geolocation position with local state
   useEffect(() => {
@@ -47,7 +45,14 @@ export default function MapView() {
   }, []);
 
   const handleMapClick = (lat: number, lng: number) => {
-    setNewMarker({ lat, lng, title: "", description: "" });
+    setNewMarker({ 
+      lat, 
+      lng, 
+      title: "", 
+      description: "", 
+      hashtagIds: [], 
+      customHashtags: [] 
+    });
   };
 
   const handleSaveMarker = async () => {
@@ -59,6 +64,9 @@ export default function MapView() {
         description: newMarker.description || null,
         latitude: newMarker.lat,
         longitude: newMarker.lng,
+        categoryId: newMarker.categoryId,
+        hashtagIds: newMarker.hashtagIds,
+        customHashtags: newMarker.customHashtags,
       });
 
       setNewMarker(null);
@@ -84,7 +92,7 @@ export default function MapView() {
         center={
           places.length > 0
             ? ([places[0].latitude, places[0].longitude] as [number, number])
-            : ([48.15, 17.1] as [number, number])
+            : ([48.7394, 19.1511] as [number, number]) // Banská Bystrica / Zvolen oblasť
         }
         zoom={11}
         style={{
@@ -94,8 +102,8 @@ export default function MapView() {
         }}
       >
         <TileLayer
-          attribution="&copy; OpenStreetMap contributors"
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          url='https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+          attribution='&copy; OpenStreetMap, &copy; CartoDB'
         />
 
         <MapClickHandler
@@ -116,7 +124,11 @@ export default function MapView() {
 
         {/* Existing places */}
         {places.map((place) => (
-          <PlaceMarker key={place.id} place={place} icon={defaultIcon} />
+          <PlaceMarker 
+            key={place.id} 
+            place={place} 
+            icon={getCategoryIcon(place.categoryId)} 
+          />
         ))}
 
         {/* New marker form */}
@@ -132,7 +144,7 @@ export default function MapView() {
         )}
         
         {/* Control buttons - mobile responsive */}
-        <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2 sm:flex-row sm:gap-3">
+        <div className="absolute top-4 right-4 z-[1000] gap-2 sm:flex-row sm:gap-3">
           <LocateButton />
           <MapControls
             isAddingMode={isAddingMode}
