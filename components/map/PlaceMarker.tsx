@@ -1,10 +1,10 @@
 "use client";
 
 import { Marker, Popup } from "react-leaflet";
-import { Button } from "../ui/button";
 import { Place } from "@/src/types/places";
+import { getCategoryConfig } from "@/src/config/categories";
 import L from "leaflet";
-import { Calendar } from "lucide-react";
+import { Calendar, Hash } from "lucide-react";
 
 interface PlaceMarkerProps {
   place: Place;
@@ -40,6 +40,8 @@ function getRelativeTime(dateInput: string | Date): string {
 }
 
 export function PlaceMarker({ place, icon }: PlaceMarkerProps) {
+  const categoryConfig = getCategoryConfig(place.categoryId);
+  
   return (
     <Marker
       position={[place.latitude, place.longitude] as [number, number]}
@@ -55,23 +57,41 @@ export function PlaceMarker({ place, icon }: PlaceMarkerProps) {
             </p>
           )}
 
-          {/* Kategória */}
-          {place.category && (
+          {/* Kategória - použije našu konfiguráciu */}
+          {place.categoryId && (
             <div className="flex items-center gap-2 mb-2">
               <span 
                 className="w-3 h-3 rounded-full" 
-                style={{ backgroundColor: place.category.color || '#666' }}
+                style={{ backgroundColor: categoryConfig.color }}
               ></span>
               <span className="text-xs font-medium text-gray-700">
-                {place.category.name}
+                {categoryConfig.name}
               </span>
+            </div>
+          )}
+
+          {/* Hashtagy */}
+          {place.hashtags && place.hashtags.length > 0 && (
+            <div className="mb-3">
+
+              <div className="flex flex-wrap gap-1">
+                {place.hashtags.map((hashtag) => (
+                  <span
+                    key={hashtag.id}
+                    className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs"
+                  >
+                    <Hash className="w-3 h-3 mr-1" />
+                    {hashtag.name.replace('#', '')}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
           
           {/* Timestamp informácie */}
-          <div className="text-xs text-gray-500 mb-3 space-y-1">
+          <div className="text-xs text-gray-500 space-y-1">
             <div className="flex items-center gap-1">
-              <span><Calendar /></span>
+              <Calendar className="w-3 h-3" />
               <span>Pridané: {getRelativeTime(place.createdAt)}</span>
             </div>
           </div>
