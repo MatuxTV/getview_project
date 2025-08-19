@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export default function LocateButton() {
   const map = useMap();
-  const { status, request, error } = useGeolocation(); 
+  const { status, request } = useGeolocation(); 
 
   //flyTo
   useEffect(() => {

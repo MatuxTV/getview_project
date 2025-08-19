@@ -12,6 +12,7 @@ import { PlaceMarker } from "./PlaceMarker";
 import { NewMarkerForm } from "./NewMarkerForm";
 import LocateButton from "../buttons/locateButton";
 import "leaflet/dist/leaflet.css";
+import { UserProfile } from "../userProfile";
 
 export default function MapView() {
   const [isAddingMode, setIsAddingMode] = useState(false);
@@ -61,7 +62,7 @@ export default function MapView() {
     try {
       await addPlace({
         title: newMarker.title,
-        description: newMarker.description || null,
+        description: newMarker.description,
         latitude: newMarker.lat,
         longitude: newMarker.lng,
         categoryId: newMarker.categoryId,
@@ -88,6 +89,9 @@ export default function MapView() {
 
   return (
     <div className="h-screen w-full relative">
+      <div className=" absolute top-4 right-4 z-[1000]">
+        <UserProfile/>
+      </div>
       <MapContainer
         center={
           places.length > 0
@@ -144,7 +148,7 @@ export default function MapView() {
         )}
         
         {/* Control buttons - mobile responsive */}
-        <div className="absolute top-4 right-4 z-[1000] gap-2 sm:flex-row sm:gap-3">
+        <div className="bg-white-1/40 rounded-4xl p-4 border-2 flex justify-center items-center absolute bottom-4 right-4 z-[1000] gap-2 sm:flex-row sm:gap-3">
           <LocateButton />
           <MapControls
             isAddingMode={isAddingMode}
