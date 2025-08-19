@@ -84,7 +84,6 @@ export function MapControls({ isAddingMode, onToggleAddMode }: MapControlsProps)
                   >
                     <Plus size={18} />
                   </motion.div>
-                  <span>Pridať miesto</span>
                 </motion.div>
               )}
             </AnimatePresence>

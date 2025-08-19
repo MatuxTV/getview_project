@@ -1,12 +1,12 @@
-import { NextResponse } from "next/server";
-import { db } from "@/src/db";
-import { places, categories, hashtags, placesToHashtags } from "@/src/schema";
-import { desc, eq } from "drizzle-orm";
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/src/db';
+import { places, hashtags, placesToHashtags, users } from '@/src/schema';
+import { eq } from 'drizzle-orm';
+import { auth } from '@/src/auth';
 
 export async function GET() {
   try {
-    // Najprv načítame všetky places s kategóriami
-    const allPlaces = await db
+    const placesWithDetails = await db
       .select({
         id: places.id,
         title: places.title,
@@ -15,25 +15,28 @@ export async function GET() {
         longitude: places.longitude,
         createdAt: places.createdAt,
         categoryId: places.categoryId,
-        category: {
-          id: categories.id,
-          name: categories.name,
+        userId: places.userId,
+        // Pridáme user info
+        user: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          image: users.image,
         },
       })
       .from(places)
-      .leftJoin(categories, eq(places.categoryId, categories.id))
-      .orderBy(desc(places.createdAt));
+      .leftJoin(users, eq(places.userId, users.id)); // JOIN s users tabuľkou
 
-    // Potom načítame hashtagy pre každé miesto
+    // Načítame hashtagy pre každé miesto
     const placesWithHashtags = await Promise.all(
-      allPlaces.map(async (place) => {
+      placesWithDetails.map(async (place) => {
         const placeHashtags = await db
           .select({
             id: hashtags.id,
             name: hashtags.name,
           })
-          .from(hashtags)
-          .innerJoin(placesToHashtags, eq(hashtags.id, placesToHashtags.hashtagId))
+          .from(placesToHashtags)
+          .innerJoin(hashtags, eq(placesToHashtags.hashtagId, hashtags.id))
           .where(eq(placesToHashtags.placeId, place.id));
 
         return {
@@ -45,71 +48,76 @@ export async function GET() {
 
     return NextResponse.json(placesWithHashtags);
   } catch (error) {
-    console.error("Chyba pri načítavaní miest:", error);
-    return NextResponse.json({ error: "Chyba pri načítavaní miest" }, { status: 500 });
+    console.error('Error fetching places:', error);
+    return NextResponse.json({ error: 'Failed to fetch places' }, { status: 500 });
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json();
-    const { title, description, latitude, longitude, categoryId, hashtagIds, customHashtags } = body ?? {};
-
-    if (!title || typeof latitude !== "number" || typeof longitude !== "number") {
-      return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+    // Získaj aktuálnu session
+    const session = await auth();
+    
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Vytvor miesto
-    const dataToInsert = {
-      title,
-      description,
-      latitude,
-      longitude,
-      ...(categoryId && { categoryId }),
-    };
+    const body = await request.json();
+    const { title, description, latitude, longitude, categoryId, hashtagIds = [], customHashtags = [] } = body;
 
-    const insertedPlace = await db.insert(places).values(dataToInsert).returning();
-    const placeId = insertedPlace[0].id;
+    if (!title || typeof latitude !== 'number' || typeof longitude !== 'number') {
+      return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
+    }
 
-    // Spracuj vlastné hashtagy - vytvor ich v databáze ak neexistujú
-    const allHashtagIds = [...(hashtagIds || [])];
-    
-    if (customHashtags && customHashtags.length > 0) {
-      for (const customHashtag of customHashtags) {
-        const hashtagName = customHashtag.startsWith('#') ? customHashtag : `#${customHashtag}`;
-        
-        // Skontroluj či hashtag existuje
-        const existingHashtag = await db
+    // Vytvor custom hashtagy ak existujú
+    const createdHashtagIds: number[] = [];
+    for (const customHashtag of customHashtags) {
+      const cleanHashtag = customHashtag.replace(/^#/, '').trim();
+      if (cleanHashtag) {
+        const [existingHashtag] = await db
           .select()
           .from(hashtags)
-          .where(eq(hashtags.name, hashtagName))
+          .where(eq(hashtags.name, cleanHashtag))
           .limit(1);
 
-        if (existingHashtag.length > 0) {
-          allHashtagIds.push(existingHashtag[0].id);
+        if (existingHashtag) {
+          createdHashtagIds.push(existingHashtag.id);
         } else {
-          // Vytvor nový hashtag
-          const newHashtag = await db
+          const [newHashtag] = await db
             .insert(hashtags)
-            .values({ name: hashtagName })
+            .values({ name: cleanHashtag })
             .returning();
-          allHashtagIds.push(newHashtag[0].id);
+          createdHashtagIds.push(newHashtag.id);
         }
       }
     }
 
-    // Pripoj hashtagy k miestu
+    // Vytvor nové miesto s userId z session
+    const [newPlace] = await db
+      .insert(places)
+      .values({
+        title,
+        description,
+        latitude,
+        longitude,
+        categoryId,
+        userId: session.user.id, // Pridáme userId z session
+      })
+      .returning();
+
+    // Spoj miesto s hashtagmi
+    const allHashtagIds = [...hashtagIds, ...createdHashtagIds];
     if (allHashtagIds.length > 0) {
-      const hashtagConnections = allHashtagIds.map(hashtagId => ({
-        placeId,
-        hashtagId,
-      }));
-      
-      await db.insert(placesToHashtags).values(hashtagConnections);
+      await db.insert(placesToHashtags).values(
+        allHashtagIds.map(hashtagId => ({
+          placeId: newPlace.id,
+          hashtagId,
+        }))
+      );
     }
 
-    // Vráť kompletné miesto s hashtagmi
-    const placeWithHashtags = await db
+    // Načítaj kompletné miesto s user info pre response
+    const [completePlace] = await db
       .select({
         id: places.id,
         title: places.title,
@@ -118,32 +126,22 @@ export async function POST(req: Request) {
         longitude: places.longitude,
         createdAt: places.createdAt,
         categoryId: places.categoryId,
-        category: {
-          id: categories.id,
-          name: categories.name,
+        userId: places.userId,
+        user: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          image: users.image,
         },
       })
       .from(places)
-      .leftJoin(categories, eq(places.categoryId, categories.id))
-      .where(eq(places.id, placeId));
+      .leftJoin(users, eq(places.userId, users.id))
+      .where(eq(places.id, newPlace.id));
 
-    const placeHashtags = await db
-      .select({
-        id: hashtags.id,
-        name: hashtags.name,
-      })
-      .from(hashtags)
-      .innerJoin(placesToHashtags, eq(hashtags.id, placesToHashtags.hashtagId))
-      .where(eq(placesToHashtags.placeId, placeId));
+    return NextResponse.json(completePlace, { status: 201 });
 
-    const result = {
-      ...placeWithHashtags[0],
-      hashtags: placeHashtags,
-    };
-
-    return NextResponse.json(result);
   } catch (error) {
-    console.error("Chyba pri vytváraní miesta:", error);
-    return NextResponse.json({ error: "Chyba pri vytváraní miesta" }, { status: 500 });
+    console.error('Error creating place:', error);
+    return NextResponse.json({ error: 'Failed to create place' }, { status: 500 });
   }
 }
