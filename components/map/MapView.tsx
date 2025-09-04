@@ -17,12 +17,14 @@ import { UserProfile } from "../userProfile";
 export default function MapView() {
   const [isAddingMode, setIsAddingMode] = useState(false);
   const [newMarker, setNewMarker] = useState<NewMarker | null>(null);
-  const [userPosition, setUserPosition] = useState<{lat: number, lng: number} | null>(null);
+  const [userPosition, setUserPosition] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
 
   const { position } = useGeolocation();
   const { places, addPlace } = usePlaces();
   const { userLocationIcon, newMarkerIcon, getCategoryIcon } = useMapIcons();
-  
 
   // Sync geolocation position with local state
   useEffect(() => {
@@ -34,25 +36,31 @@ export default function MapView() {
   // Poslúchaj na geolocation updates a aktualizuj lokálny state
   useEffect(() => {
     const handleLocationUpdate = (event: CustomEvent) => {
-      console.log("Location update event received", event.detail);
+  
       setUserPosition({ lat: event.detail.lat, lng: event.detail.lng });
     };
 
-    window.addEventListener('geolocation-fly-to', handleLocationUpdate as EventListener);
-    
+    window.addEventListener(
+      "geolocation-fly-to",
+      handleLocationUpdate as EventListener
+    );
+
     return () => {
-      window.removeEventListener('geolocation-fly-to', handleLocationUpdate as EventListener);
+      window.removeEventListener(
+        "geolocation-fly-to",
+        handleLocationUpdate as EventListener
+      );
     };
   }, []);
 
   const handleMapClick = (lat: number, lng: number) => {
-    setNewMarker({ 
-      lat, 
-      lng, 
-      title: "", 
-      description: "", 
-      hashtagIds: [], 
-      customHashtags: [] 
+    setNewMarker({
+      lat,
+      lng,
+      title: "",
+      description: "",
+      hashtagIds: [],
+      customHashtags: [],
     });
   };
 
@@ -90,7 +98,7 @@ export default function MapView() {
   return (
     <div className="h-screen w-full relative">
       <div className=" absolute top-4 right-4 z-[1000]">
-        <UserProfile/>
+        <UserProfile />
       </div>
       <MapContainer
         center={
@@ -106,8 +114,8 @@ export default function MapView() {
         }}
       >
         <TileLayer
-          url='https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-          attribution='&copy; OpenStreetMap, &copy; CartoDB'
+          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          attribution="&copy; OpenStreetMap, &copy; CartoDB"
         />
 
         <MapClickHandler
@@ -118,20 +126,21 @@ export default function MapView() {
         {/* User location marker */}
         {userPosition && (
           <>
-            {console.log("Rendering user marker at:", [userPosition.lat, userPosition.lng])}
             <Marker
               icon={userLocationIcon}
-              position={[userPosition.lat, userPosition.lng] as [number, number]}
+              position={
+                [userPosition.lat, userPosition.lng] as [number, number]
+              }
             ></Marker>
           </>
         )}
 
         {/* Existing places */}
         {places.map((place) => (
-          <PlaceMarker 
-            key={place.id} 
-            place={place} 
-            icon={getCategoryIcon(place.categoryId)} 
+          <PlaceMarker
+            key={place.id}
+            place={place}
+            icon={getCategoryIcon(place.categoryId)}
           />
         ))}
 
@@ -146,10 +155,12 @@ export default function MapView() {
             isDisabled={!newMarker.title.trim()}
           />
         )}
-        
+
         {/* Control buttons - mobile responsive */}
-        <div className="bg-white-1/40 rounded-4xl p-4 border-2 flex justify-center items-center absolute bottom-4 right-4 z-[1000] gap-2 sm:flex-row sm:gap-3">
-          <LocateButton />
+        <div className="bg-white-1/70 rounded-4xl p-4 border-2 md:flex justify-center items-center absolute md:bottom-8 bottom-16 right-4 z-[1000] gap-2  sm:gap-3">
+          <div className=" md:mb-0 mb-1.5">
+            <LocateButton />
+          </div>
           <MapControls
             isAddingMode={isAddingMode}
             onToggleAddMode={handleToggleAddMode}

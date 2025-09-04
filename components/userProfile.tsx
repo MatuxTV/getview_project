@@ -41,7 +41,7 @@ export function UserProfile() {
             alt={session.user.name || "User"}
             width={40}
             height={40}
-            className="rounded-full ring-2 ring-blue-500/20"
+            className="rounded-full ring-2 ring-blue-500/40"
             priority
           />
         ) : (
@@ -52,7 +52,7 @@ export function UserProfile() {
           </div>
         )}
         <div className="m-2">
-          <div className="text-black-1/80">
+          <div className="text-black-1/80 font-medium">
             Ahoj {session.user.name?.split(" ")[0]}!
           </div>
         </div>
@@ -60,7 +60,7 @@ export function UserProfile() {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="p-4 absolute top-full right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border py-2 z-10">
+        <div className="p-4 absolute top-full right-0 mt-2 w-64 bg-white/50 rounded-lg shadow-lg border py-2 z-10">
           <div className="px-4 py-2 border-b border-gray-100">
             <div className="font-medium text-black-1">{session.user.name}</div>
             <div className="text-sm text-black-1/50">{session.user.email}</div>
